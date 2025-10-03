@@ -114,3 +114,133 @@ wormhole/solana $ vimdiff compiled.bin deployed.bin
 ```
 
 Do not proceed with governance until you can verify the on-chain bytecode with the locally compiled bytecode.
+
+# 🛰️ Wormhole & Token Bridge Fuzz Testing
+
+## 📌 Overview
+This repository implements **fuzz testing** for the [Wormhole](https://wormhole.com) and **Token Bridge** programs.  
+The goal is to systematically validate critical functions, ensuring both **success paths** and **failure cases** are correctly handled.  
+
+By simulating a wide range of **randomized inputs** and **edge cases**, this testing framework helps improve the **security, reliability, and robustness** of cross-chain message passing and token transfers.  
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+flowchart TD
+    Fuzz[Fuzz Testing]
+
+    subgraph Wormhole
+        A[post_message] --> A1[✓ success]
+        A --> A2[x invalid_emitter]
+        A --> A3[x math_overflow]
+        A --> A4[x insufficient_fee]
+
+        B[post_message_unreliable] --> B1[✓ success_case]
+        B --> B2[x invalid_payload_length]
+        B --> B3[x invalid_emitter]
+
+        C[post_vaa] --> C1[✓ success_case]
+        C --> C2[x consensus_fail]
+
+        D[upgrade_contract] --> D1[✓ success_case]
+        D --> D2[x invalid_guardian_key]
+
+        E[upgrade_guardian_set] --> E1[✓ success_case]
+        E --> E2[x invalid_guardian_set_upgrade]
+
+        F[set_fees] --> F1[✓ success_case]
+        F --> F2[x invalid_guardian_key]
+
+        G[transfer_fees] --> G1[✓ success_case]
+        G --> G2[x invalid_withdrawer]
+    end
+
+    subgraph TokenBridge
+        H[register_chain] --> H1[✓ success_case]
+        H --> H2[x invalid_vaa]
+
+        I[attest_token] --> I1[✓ success_case]
+        I --> I2[x non_existent_token_metadata_account]
+        I --> I3[x wrong_account_owner]
+
+        J[create_wrapped] --> J1[✓ success_case]
+        J --> J2[x invalid_vaa]
+        J --> J3[x wrong_account_owner]
+
+        K[transfer_wrapped] --> K1[✓ success_case]
+        K --> K2[x invalid_vaa]
+        K --> K3[x invalid_mint]
+
+        L[transfer_native] --> L1[✓ success_case]
+        L --> L2[x invalid_mint]
+        L --> L3[x invalid_recipient]
+
+        M[complete_wrapped] --> M1[✓ success_case]
+        M --> M2[x insufficient_funds]
+
+        N[complete_native] --> N1[✓ success_case]
+        N --> N2[x invalid_mint]
+        N --> N3[x invalid_recipient]
+    end
+
+    Fuzz --> Wormhole
+    Fuzz --> TokenBridge
+```
+
+---
+
+## 🔑 Key Components
+
+- **Wormhole Module**
+  - `post_message`, `post_message_unreliable`, `post_vaa`
+  - Administrative: `upgrade_contract`, `upgrade_guardian_set`, `set_fees`, `transfer_fees`
+  - Handles message publication, governance, and fee transfers.
+
+- **Token Bridge Module**
+  - `register_chain`, `attest_token`, `create_wrapped`
+  - Transfers: `transfer_wrapped`, `transfer_native`
+  - Completions: `complete_wrapped`, `complete_native`
+  - Handles token attestations, wrapping, and cross-chain transfers.
+
+---
+
+## 🚀 Testing Approach
+
+1. **Fuzzing Input Generation**
+   - Random and edge-case values generated for each instruction.
+   - Covers metadata, token addresses, guardian sets, and VAA data.  
+
+2. **Execution & Monitoring**
+   - Transactions executed against Solana programs.
+   - Capture logs, errors, and success states.  
+
+3. **Assertions**
+   - Compare results against expected outcomes:
+     - ✅ **Success cases** must pass validation.  
+     - ❌ **Failure cases** must return correct error codes.  
+
+---
+
+## 🧪 Example Test Scenarios
+
+- **Wormhole**
+  - `post_message` with insufficient fee → fail with `InsufficientFee`
+  - `upgrade_guardian_set` with invalid guardian → fail with `InvalidGuardianSetUpgrade`
+
+- **Token Bridge**
+  - `attest_token` with non-existent metadata → fail with `NonExistentTokenMetadataAccount`
+  - `transfer_wrapped` with invalid mint → fail with `InvalidMint`
+
+---
+
+## 📚 Resources
+
+- [Wormhole Documentation](https://docs.wormhole.com)  
+- [Solana Program Library](https://spl.solana.com)  
+- [Fuzz Testing Guide](https://github.com/rust-fuzz/cargo-fuzz)  
+
+---
+
+✨ With this framework, every function in **Wormhole** and **Token Bridge** is validated against **success paths and multiple failure modes**, ensuring **security, correctness, and resilience** in cross-chain operations.  
