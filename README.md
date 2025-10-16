@@ -191,6 +191,21 @@ flowchart TD
 
 ---
 
+## 💥 Run Tests
+- **Bridge test**:
+  
+  ```bash
+  BRIDGE_ADDRESS=Bridge1p5gheXUvJ6jGWGeCsgPKgnE3YgdGKRVCMY9o EMITTER_ADDRESS=CiByUvEcx7w2HA4VHcPCBUAFQ73Won9kB36zW9VjirSr make test-bridge
+  ```
+  
+- **Token bridge test**:
+  
+   ```bash
+  BRIDGE_ADDRESS=Bridge1p5gheXUvJ6jGWGeCsgPKgnE3YgdGKRVCMY9o EMITTER_ADDRESS=CiByUvEcx7w2HA4VHcPCBUAFQ73Won9kB36zW9VjirSr TOKEN_BRIDGE_ADDRESS=B6RHG3mfcckmrYN1UhmJzyS1XX3fZKbkeUcpJe9Sy3FE make test-token-bridge
+  ```
+
+---
+
 ## 🔑 Key Components
 
 - **Wormhole Module**
