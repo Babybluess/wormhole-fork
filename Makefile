@@ -24,7 +24,7 @@ nft_bridge_AUTHORITY_devnet=6sbzC1eH4FTujJXWj51eQe25cYvr4xfXbJ1vAj7j2k5J
 
 SOURCE_FILES=$(shell find . -name "*.rs" -or -name "*.lock" -or -name "*.toml" | grep -v "target") Dockerfile
 
-.PHONY: clean all help artifacts deploy/bridge deploy/token_bridge deploy/nft_bridge .FORCE fmt check clippy test
+.PHONY: clean all help artifacts deploy/bridge deploy/token_bridge deploy/nft_bridge .FORCE fmt check clippy test test-bridge
 
 -include ../Makefile.help
 
@@ -94,6 +94,18 @@ test: $(SOURCE_FILES)
 	BPF_OUT_DIR=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))/target/deploy \
 		cargo test --workspace \
 			--features "nft-bridge/instructions token-bridge/instructions wormhole-bridge-solana/instructions"
+
+test-bridge: $(SOURCE_FILES)
+	DOCKER_BUILDKIT=1 docker build -f Dockerfile --build-arg BRIDGE_ADDRESS=${bridge_ADDRESS_devnet} \
+		--build-arg EMITTER_ADDRESS=CiByUvEcx7w2HA4VHcPCBUAFQ73Won9kB36zW9VjirSr -o target/deploy .
+	BPF_OUT_DIR=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))/target/deploy \
+		cargo test -p wormhole-bridge-solana --features "wormhole-bridge-solana/instructions" --test fuzz
+
+test-token-bridge: $(SOURCE_FILES)
+	DOCKER_BUILDKIT=1 docker build -f Dockerfile --build-arg BRIDGE_ADDRESS=${bridge_ADDRESS_devnet} \
+		--build-arg EMITTER_ADDRESS=CiByUvEcx7w2HA4VHcPCBUAFQ73Won9kB36zW9VjirSr --build-arg TOKEN_BRIDGE_ADDRESS=${token_bridge_ADDRESS_devnet} -o target/deploy .
+	BPF_OUT_DIR=$(realpath $(dir $(firstword $(MAKEFILE_LIST))))/target/deploy \
+		cargo test -p token-bridge --features "token-bridge/instructions" --test fuzz
 
 clean:
 	rm -rf artifacts-mainnet artifacts-testnet artifacts-devnet *-buffer-*.txt
